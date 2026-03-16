@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Body Mapping – Musculoskeletal Symptom Report</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --red: #c0392b;
+    --blue: #2471a3;
+    --dark: #1a1a2e;
+    --mid: #4a4a6a;
+    --light: #f4f6f8;
+    --border: #d0d4db;
+    --body-outline: #2c3e50;
+  }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--light);
+    color: var(--dark);
+    min-height: 100vh;
+  }
+
+  /* ── Header ─────────────────────────────── */
+  header {
+    background: var(--dark);
+    color: #fff;
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    border-bottom: 4px solid var(--red);
+  }
+  header .logo-block { display: flex; align-items: center; gap: 10px; }
+  header .logo-text { font-size: 13px; font-weight: 700; letter-spacing: 2px; color: #fff; opacity: 0.55; text-transform: uppercase; }
+  header h1 { font-size: 20px; font-weight: 600; letter-spacing: 0.3px; }
+  header p.sub { font-size: 13px; opacity: 0.65; margin-top: 2px; }
+
+  /* ── Layout ──────────────────────────────── */
+  .container { max-width: 980px; margin: 0 auto; padding: 28px 18px 60px; }
+
+  .intro-box {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--red);
+    border-radius: 6px;
+    padding: 16px 20px;
+    margin-bottom: 28px;
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--mid);
+  }
+  .intro-box strong { color: var(--dark); }
+
+  /* ── Legend / palette ────────────────────── */
+  .legend {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .legend-label { font-size: 13px; font-weight: 600; color: var(--mid); margin-right: 4px; }
+
+  .dot-btn {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 14px;
+    border-radius: 30px;
+    border: 2px solid transparent;
+    cursor: grab;
+    font-size: 13px;
+    font-weight: 600;
+    user-select: none;
+    transition: transform 0.1s, box-shadow 0.1s;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+  }
+  .dot-btn:active { transform: scale(0.93); }
+  .dot-btn.red  { border-color: var(--red);  color: var(--red);  }
+  .dot-btn.blue { border-color: var(--blue); color: var(--blue); }
+  .dot-btn .swatch {
+    width: 18px; height: 18px; border-radius: 50%;
+    flex-shrink: 0;
+    opacity: 0.9;
+  }
+  .dot-btn.red  .swatch { background: var(--red);  }
+  .dot-btn.blue .swatch { background: var(--blue); }
+
+  .btn-clear {
+    margin-left: auto;
+    padding: 7px 16px;
+    border-radius: 5px;
+    border: 1.5px solid var(--border);
+    background: #fff;
+    color: var(--mid);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-clear:hover { background: #f0f0f0; }
+
+  /* ── Body map canvas ─────────────────────── */
+  .map-wrap {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 10px 16px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+  .map-inner {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    flex-wrap: wrap;
+  }
+  .figure-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .figure-col .fig-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #8888a0;
+    font-weight: 600;
+  }
+  .body-zone {
+    position: relative;
+    width: 200px;
+    height: 440px;
+  }
+  .body-zone svg {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+  }
+  /* placed dots */
+  .placed-dot {
+    position: absolute;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+    opacity: 0.85;
+    border: 2px solid rgba(255,255,255,0.7);
+    box-shadow: 0 1px 5px rgba(0,0,0,0.25);
+    transition: transform 0.1s;
+    z-index: 10;
+  }
+  .placed-dot:hover { transform: translate(-50%,-50%) scale(1.25); opacity: 1; }
+  .placed-dot.red  { background: var(--red);  }
+  .placed-dot.blue { background: var(--blue); }
+
+  .map-hint {
+    text-align: center;
+    font-size: 12px;
+    color: #aaa;
+    margin-top: 10px;
+  }
+
+  /* ── Questions section ───────────────────── */
+  section.questions { margin-bottom: 32px; }
+  section.questions h2 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 4px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--red);
+    display: inline-block;
+  }
+  section.questions .q-intro {
+    font-size: 13px;
+    color: var(--mid);
+    margin: 10px 0 20px;
+    line-height: 1.6;
+  }
+
+  .question-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+  }
+  .question-card label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--dark);
+    margin-bottom: 8px;
+    line-height: 1.5;
+  }
+  .question-card label .q-num {
+    display: inline-block;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--red);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center;
+    line-height: 22px;
+    margin-right: 8px;
+    flex-shrink: 0;
+  }
+  .question-card textarea {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: 5px;
+    padding: 10px 12px;
+    font-size: 13.5px;
+    font-family: inherit;
+    color: var(--dark);
+    resize: vertical;
+    min-height: 70px;
+    background: var(--light);
+    transition: border-color 0.15s;
+    line-height: 1.6;
+  }
+  .question-card textarea:focus {
+    outline: none;
+    border-color: var(--blue);
+    background: #fff;
+  }
+  .question-card textarea::placeholder { color: #bbb; }
+
+  /* radio-style yes/no */
+  .radio-row { display: flex; gap: 16px; margin-top: 4px; }
+  .radio-row label {
+    display: flex; align-items: center; gap: 6px;
+    font-weight: 400; font-size: 13.5px; cursor: pointer;
+  }
+  .radio-row input[type=radio] { accent-color: var(--red); }
+
+  /* ── Actions ─────────────────────────────── */
+  .actions {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+  .btn-primary {
+    padding: 12px 28px;
+    background: var(--red);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+    transition: background 0.15s;
+  }
+  .btn-primary:hover { background: #a93226; }
+  .btn-secondary {
+    padding: 12px 24px;
+    background: #fff;
+    color: var(--mid);
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-secondary:hover { background: #f0f2f5; }
+
+  /* ── Submission result ───────────────────── */
+  #result-box {
+    display: none;
+    background: #eafaf1;
+    border: 1.5px solid #2ecc71;
+    border-radius: 6px;
+    padding: 16px 20px;
+    font-size: 14px;
+    line-height: 1.7;
+    margin-bottom: 24px;
+    color: #1a5c34;
+  }
+
+  /* ── Print summary ───────────────────────── */
+  #print-area { display: none; }
+
+  @media print {
+    body > *:not(#print-area) { display: none !important; }
+    #print-area {
+      display: block !important;
+      font-family: 'Segoe UI', sans-serif;
+      font-size: 13px;
+      color: #111;
+      padding: 20px;
+    }
+    #print-area h2 { font-size: 18px; margin-bottom: 12px; color: #c0392b; }
+    #print-area .print-body-row { display: flex; gap: 30px; margin-bottom: 24px; }
+    #print-area .print-body-row canvas { border: 1px solid #ccc; }
+    #print-area .print-q { margin-bottom: 10px; }
+    #print-area .print-q strong { display: block; font-size: 12px; color: #555; margin-bottom: 3px; }
+  }
+
+  @media (max-width: 600px) {
+    header h1 { font-size: 16px; }
+    .map-inner { gap: 16px; }
+    .body-zone { width: 150px; height: 330px; }
+  }
+
+  /* drag ghost */
+  .drag-ghost {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    opacity: 0.75;
+    border: 2px solid rgba(255,255,255,0.7);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    transform: translate(-50%,-50%);
+  }
+  .drag-ghost.red  { background: var(--red);  }
+  .drag-ghost.blue { background: var(--blue); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-block">
+    <div class="logo-text">BALPA</div>
+  </div>
+  <div>
+    <h1>Body Mapping – Musculoskeletal Symptom Report</h1>
+    <p class="sub">In line with HSE Body Mapping guidance &nbsp;|&nbsp; Anonymous &amp; Confidential</p>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="intro-box">
+    <strong>About this exercise:</strong> Body mapping is a simple way for you to report any aches, pains or discomfort in your back, joints or muscles that may be caused or made worse by your work. Your responses are treated <strong>confidentially</strong> — they will be used only to identify common patterns and inform health &amp; safety improvements. Pain should not be part of your job.
+  </div>
+
+  <!-- Legend & dot buttons -->
+  <div class="legend">
+    <span class="legend-label">Mark on the body:</span>
+    <div class="dot-btn red"  id="btn-red"  draggable="true" data-color="red"  title="Drag onto the body">
+      <div class="swatch"></div>
+      <span>Ongoing / repetitive pain</span>
+    </div>
+    <div class="dot-btn blue" id="btn-blue" draggable="true" data-color="blue" title="Drag onto the body">
+      <div class="swatch"></div>
+      <span>One-off injury (strain / sprain)</span>
+    </div>
+    <button class="btn-clear" id="btn-clear-dots">Clear all markers</button>
+  </div>
+
+  <!-- Body map -->
+  <div class="map-wrap" id="map-wrap">
+    <div class="map-inner">
+
+      <!-- Front -->
+      <div class="figure-col">
+        <span class="fig-label">Front</span>
+        <div class="body-zone" id="zone-front">
+          <svg viewBox="0 0 200 440" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#2c3e50" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <!-- Head -->
+            <ellipse cx="100" cy="36" rx="26" ry="31" />
+            <!-- Neck -->
+            <path d="M88 64 Q88 76 90 80 L110 80 Q112 76 112 64"/>
+            <!-- Shoulders -->
+            <path d="M90 80 Q70 82 54 90 Q42 96 40 110"/>
+            <path d="M110 80 Q130 82 146 90 Q158 96 160 110"/>
+            <!-- Torso outline -->
+            <path d="M40 110 L36 180 Q38 200 44 210 L56 240 Q62 252 64 265 L68 310"/>
+            <path d="M160 110 L164 180 Q162 200 156 210 L144 240 Q138 252 136 265 L132 310"/>
+            <!-- Chest / abdomen centre -->
+            <path d="M90 80 L88 160 Q88 190 90 210 L92 310" stroke="#2c3e50" stroke-width="0.8" stroke-dasharray="4 4"/>
+            <path d="M110 80 L112 160 Q112 190 110 210 L108 310" stroke="#2c3e50" stroke-width="0.8" stroke-dasharray="4 4"/>
+            <!-- Clavicles -->
+            <path d="M90 82 Q78 86 58 92"/>
+            <path d="M110 82 Q122 86 142 92"/>
+            <!-- Arms left -->
+            <path d="M40 110 Q28 130 26 160 Q22 185 26 210 Q30 230 32 248"/>
+            <path d="M54 90 Q45 110 40 140"/>
+            <!-- Arms right -->
+            <path d="M160 110 Q172 130 174 160 Q178 185 174 210 Q170 230 168 248"/>
+            <path d="M146 90 Q155 110 160 140"/>
+            <!-- Left forearm -->
+            <path d="M26 210 Q24 230 26 248"/>
+            <path d="M32 248 Q30 258 28 265"/>
+            <!-- Right forearm -->
+            <path d="M174 210 Q176 230 174 248"/>
+            <path d="M168 248 Q170 258 172 265"/>
+            <!-- Left hand -->
+            <path d="M26 265 Q22 270 20 276 Q24 280 26 274"/>
+            <path d="M26 265 Q25 272 24 278 Q28 282 30 275"/>
+            <path d="M26 265 Q28 272 28 279 Q32 282 33 275"/>
+            <path d="M26 265 Q30 271 31 278 Q34 280 35 273"/>
+            <path d="M26 265 Q32 268 33 273 Q35 274 36 268"/>
+            <!-- Right hand -->
+            <path d="M172 265 Q176 270 178 276 Q174 280 172 274"/>
+            <path d="M172 265 Q173 272 174 278 Q170 282 168 275"/>
+            <path d="M172 265 Q170 272 170 279 Q166 282 165 275"/>
+            <path d="M172 265 Q168 271 167 278 Q164 280 163 273"/>
+            <path d="M172 265 Q166 268 165 273 Q163 274 162 268"/>
+            <!-- Groin -->
+            <path d="M68 310 Q82 318 100 318 Q118 318 132 310"/>
+            <!-- Hips -->
+            <path d="M68 310 Q66 325 68 340"/>
+            <path d="M132 310 Q134 325 132 340"/>
+            <!-- Left leg upper -->
+            <path d="M68 340 Q62 370 60 400 Q58 420 60 440"/>
+            <path d="M100 318 Q94 340 92 370 Q90 400 90 440"/>
+            <!-- Right leg upper -->
+            <path d="M132 340 Q138 370 140 400 Q142 420 140 440"/>
+            <path d="M100 318 Q106 340 108 370 Q110 400 110 440"/>
+            <!-- Left knee -->
+            <path d="M60 390 Q62 394 66 394 Q70 394 72 390" stroke-width="1"/>
+            <!-- Right knee -->
+            <path d="M138 390 Q136 394 132 394 Q128 394 126 390" stroke-width="1"/>
+            <!-- Navel -->
+            <circle cx="100" cy="190" r="3" fill="#2c3e50" stroke="none"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Back -->
+      <div class="figure-col">
+        <span class="fig-label">Back</span>
+        <div class="body-zone" id="zone-back">
+          <svg viewBox="0 0 200 440" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#2c3e50" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <!-- Head (back) -->
+            <ellipse cx="100" cy="36" rx="26" ry="31" />
+            <!-- Neck back -->
+            <path d="M88 64 Q88 76 90 80 L110 80 Q112 76 112 64"/>
+            <!-- Shoulders -->
+            <path d="M90 80 Q70 82 54 90 Q42 96 40 110"/>
+            <path d="M110 80 Q130 82 146 90 Q158 96 160 110"/>
+            <!-- Spine line -->
+            <path d="M100 80 L100 310" stroke-width="0.8" stroke-dasharray="5 4"/>
+            <!-- Shoulder blade hints -->
+            <path d="M70 100 Q64 125 72 140 Q82 148 92 140" stroke-width="1.2"/>
+            <path d="M130 100 Q136 125 128 140 Q118 148 108 140" stroke-width="1.2"/>
+            <!-- Torso outline back -->
+            <path d="M40 110 L36 180 Q38 200 44 210 L56 240 Q62 252 64 265 L68 310"/>
+            <path d="M160 110 L164 180 Q162 200 156 210 L144 240 Q138 252 136 265 L132 310"/>
+            <!-- Arms left -->
+            <path d="M40 110 Q28 130 26 160 Q22 185 26 210 Q30 230 32 248"/>
+            <path d="M54 90 Q45 110 40 140"/>
+            <!-- Arms right -->
+            <path d="M160 110 Q172 130 174 160 Q178 185 174 210 Q170 230 168 248"/>
+            <path d="M146 90 Q155 110 160 140"/>
+            <!-- Forearms -->
+            <path d="M26 210 Q24 230 26 248"/>
+            <path d="M32 248 Q30 258 28 265"/>
+            <path d="M174 210 Q176 230 174 248"/>
+            <path d="M168 248 Q170 258 172 265"/>
+            <!-- Left hand back -->
+            <path d="M26 265 Q22 270 20 276 Q24 280 26 274"/>
+            <path d="M26 265 Q25 272 24 278 Q28 282 30 275"/>
+            <path d="M26 265 Q28 272 28 279 Q32 282 33 275"/>
+            <path d="M26 265 Q30 271 31 278 Q34 280 35 273"/>
+            <path d="M26 265 Q32 268 33 273 Q35 274 36 268"/>
+            <!-- Right hand back -->
+            <path d="M172 265 Q176 270 178 276 Q174 280 172 274"/>
+            <path d="M172 265 Q173 272 174 278 Q170 282 168 275"/>
+            <path d="M172 265 Q170 272 170 279 Q166 282 165 275"/>
+            <path d="M172 265 Q168 271 167 278 Q164 280 163 273"/>
+            <path d="M172 265 Q166 268 165 273 Q163 274 162 268"/>
+            <!-- Gluteal fold -->
+            <path d="M68 310 Q82 322 100 322 Q118 322 132 310"/>
+            <path d="M82 318 Q88 330 100 332 Q112 330 118 318" stroke-width="1"/>
+            <!-- Hips -->
+            <path d="M68 310 Q66 325 68 340"/>
+            <path d="M132 310 Q134 325 132 340"/>
+            <!-- Legs back -->
+            <path d="M68 340 Q62 370 60 400 Q58 420 60 440"/>
+            <path d="M100 322 Q94 340 92 370 Q90 400 90 440"/>
+            <path d="M132 340 Q138 370 140 400 Q142 420 140 440"/>
+            <path d="M100 322 Q106 340 108 370 Q110 400 110 440"/>
+            <!-- Knee hints back -->
+            <path d="M60 390 Q62 394 66 394 Q70 394 72 390" stroke-width="1"/>
+            <path d="M138 390 Q136 394 132 394 Q128 394 126 390" stroke-width="1"/>
+          </svg>
+        </div>
+      </div>
+
+    </div><!-- map-inner -->
+    <p class="map-hint">Tap or drag a coloured marker from above onto the body area where you experience symptoms. Click a placed marker to remove it.</p>
+  </div><!-- map-wrap -->
+
+  <!-- Questions -->
+  <section class="questions">
+    <h2>Tell us more about your symptoms</h2>
+    <p class="q-intro">Please answer as many questions as you can. Your responses are treated confidentially and will help us identify and address work-related musculoskeletal risks.</p>
+
+    <div class="question-card">
+      <label><span class="q-num">1</span>Which area(s) of your body are affected? Please describe the location and type of discomfort (e.g. sharp, aching, stiffness, numbness).</label>
+      <textarea name="q1" placeholder="e.g. Lower back – a dull ache that builds through the shift; right shoulder – stiffness when reaching overhead…"></textarea>
+    </div>
+
+    <div class="question-card">
+      <label><span class="q-num">2</span>Are there specific tasks, activities or elements of your work that you believe contribute to your aches or pains?</label>
+      <textarea name="q2" placeholder="e.g. Operating controls during long sectors, sitting in a fixed posture for extended periods, pre-flight walk-rounds…"></textarea>
+    </div>
+
+    <div class="question-card">
+      <label><span class="q-num">3</span>Do your aches or pains get worse during or by the end of your shift / working week?</label>
+      <div class="radio-row">
+        <label><input type="radio" name="q3" value="yes"> Yes</label>
+        <label><input type="radio" name="q3" value="no"> No</label>
+        <label><input type="radio" name="q3" value="sometimes"> Sometimes</label>
+      </div>
+      <textarea name="q3_detail" placeholder="Any additional detail…" style="margin-top:10px;"></textarea>
+    </div>
+
+    <div class="question-card">
+      <label><span class="q-num">4</span>Have your symptoms been getting progressively worse over time?</label>
+      <div class="radio-row">
+        <label><input type="radio" name="q4" value="yes"> Yes</label>
+        <label><input type="radio" name="q4" value="no"> No</label>
+        <label><input type="radio" name="q4" value="unsure"> Unsure</label>
+      </div>
+      <textarea name="q4_detail" placeholder="How long have you had these symptoms?"></textarea>
+    </div>
+
+    <div class="question-card">
+      <label><span class="q-num">5</span>Do your symptoms improve when you are away from work (e.g. on days off, on leave)?</label>
+      <div class="radio-row">
+        <label><input type="radio" name="q5" value="yes"> Yes</label>
+        <label><input type="radio" name="q5" value="no"> No</label>
+        <label><input type="radio" name="q5" value="partial"> Partially</label>
+      </div>
+    </div>
+
+    <div class="question-card">
+      <label><span class="q-num">6</span>Do your aches or pains affect your ability to do your job, or impact your home life (e.g. sleep, leisure activities)?</label>
+      <textarea name="q6" placeholder="e.g. I find it difficult to concentrate during long sectors; the pain disrupts my sleep…"></textarea>
+    </div>
+
+    <div class="question-card">
+      <label><span class="q-num">7</span>Do you feel that workload, rostering patterns, time pressure or lack of control over your work make your symptoms worse?</label>
+      <div class="radio-row">
+        <label><input type="radio" name="q7" value="yes"> Yes</label>
+        <label><input type="radio" name="q7" value="no"> No</label>
+        <label><input type="radio" name="q7" value="sometimes"> Sometimes</label>
+      </div>
+      <textarea name="q7_detail" placeholder="Please describe if yes…" style="margin-top:10px;"></textarea>
+    </div>
+
+    <div class="question-card">
+      <label><span class="q-num">8</span>Have you discussed your symptoms with a manager, occupational health or a union representative?</label>
+      <div class="radio-row">
+        <label><input type="radio" name="q8" value="yes"> Yes</label>
+        <label><input type="radio" name="q8" value="no"> No</label>
+      </div>
+      <textarea name="q8_detail" placeholder="If yes, what was the outcome? If no, why not?"></textarea>
+    </div>
+
+    <div class="question-card">
+      <label><span class="q-num">9</span>What changes do you think would reduce or eliminate your symptoms? (Any suggestions, however small, are welcome.)</label>
+      <textarea name="q9" placeholder="e.g. Adjustable seat lumbar support, shorter maximum sector lengths, ergonomic assessment of the flight deck, rest breaks, better briefing on manual handling…" style="min-height:100px;"></textarea>
+    </div>
+
+    <div class="question-card">
+      <label><span class="q-num">10</span>Is there anything else you would like to add?</label>
+      <textarea name="q10" placeholder="Any other relevant information…"></textarea>
+    </div>
+
+  </section>
+
+  <!-- Actions -->
+  <div id="result-box">
+    ✅ <strong>Thank you.</strong> Your body map and responses have been saved. This information will be used anonymously to identify and address musculoskeletal risks. You will not be identified.
+  </div>
+
+  <div class="actions">
+    <button class="btn-primary" id="btn-submit">Save &amp; Submit</button>
+    <button class="btn-secondary" id="btn-print">Print / Save as PDF</button>
+    <button class="btn-secondary" id="btn-download">Download as JSON</button>
+  </div>
+
+</div><!-- container -->
+
+<!-- Print area (populated on print) -->
+<div id="print-area">
+  <h2>Body Mapping Report – BALPA</h2>
+  <p id="print-date"></p>
+  <div class="print-body-row">
+    <div><p><strong>Front</strong></p><canvas id="canvas-front" width="200" height="440"></canvas></div>
+    <div><p><strong>Back</strong></p><canvas id="canvas-back" width="200" height="440"></canvas></div>
+  </div>
+  <div id="print-answers"></div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ── State ─────────────────────────────────────────────────────
+  const dots = []; // { color, zone, pct_x, pct_y }
+
+  // ── Drag logic ────────────────────────────────────────────────
+  let dragging = null;
+  let ghost = null;
+
+  function createGhost(color) {
+    ghost = document.createElement('div');
+    ghost.className = 'drag-ghost ' + color;
+    document.body.appendChild(ghost);
+  }
+  function removeGhost() { if (ghost) { ghost.remove(); ghost = null; } }
+  function moveGhost(x, y) { if (ghost) { ghost.style.left = x + 'px'; ghost.style.top = y + 'px'; } }
+
+  // Pointer events for palette buttons
+  ['btn-red','btn-blue'].forEach(id => {
+    const btn = document.getElementById(id);
+    btn.addEventListener('pointerdown', e => {
+      dragging = btn.dataset.color;
+      createGhost(dragging);
+      moveGhost(e.clientX, e.clientY);
+      e.preventDefault();
+    });
+  });
+
+  document.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    moveGhost(e.clientX, e.clientY);
+    e.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener('pointerup', e => {
+    if (!dragging) return;
+    removeGhost();
+    const color = dragging;
+    dragging = null;
+
+    // Find which zone the pointer is over
+    ['front','back'].forEach(zone => {
+      const el = document.getElementById('zone-' + zone);
+      const rect = el.getBoundingClientRect();
+      if (e.clientX >= rect.left && e.clientX <= rect.right &&
+          e.clientY >= rect.top  && e.clientY <= rect.bottom) {
+        const px = (e.clientX - rect.left) / rect.width;
+        const py = (e.clientY - rect.top)  / rect.height;
+        placeDot(color, zone, px, py);
+      }
+    });
+  });
+
+  // Also support tap (click) on zones
+  ['front','back'].forEach(zone => {
+    const el = document.getElementById('zone-' + zone);
+    el.style.cursor = 'crosshair';
+    el.addEventListener('click', e => {
+      if (dragging) return; // handled by pointerup
+      // Use the active color from radio or default to red
+      const color = document.querySelector('.dot-btn.active')?.dataset.color || 'red';
+      const rect = el.getBoundingClientRect();
+      const px = (e.clientX - rect.left) / rect.width;
+      const py = (e.clientY - rect.top)  / rect.height;
+      placeDot(color, zone, px, py);
+    });
+  });
+
+  // Quick-select active dot type by clicking palette
+  document.querySelectorAll('.dot-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.dot-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+  document.getElementById('btn-red').classList.add('active');
+
+  function placeDot(color, zone, px, py) {
+    const el = document.getElementById('zone-' + zone);
+    const dot = document.createElement('div');
+    dot.className = 'placed-dot ' + color;
+    dot.style.left = (px * 100) + '%';
+    dot.style.top  = (py * 100) + '%';
+    dot.title = 'Click to remove';
+    el.appendChild(dot);
+
+    const entry = { color, zone, px, py, el: dot };
+    dots.push(entry);
+
+    dot.addEventListener('click', e => {
+      e.stopPropagation();
+      dot.remove();
+      dots.splice(dots.indexOf(entry), 1);
+    });
+  }
+
+  document.getElementById('btn-clear-dots').addEventListener('click', () => {
+    dots.forEach(d => d.el.remove());
+    dots.length = 0;
+  });
+
+  // ── Collect answers ───────────────────────────────────────────
+  function collectAnswers() {
+    const out = {};
+    document.querySelectorAll('textarea[name]').forEach(t => {
+      out[t.name] = t.value.trim();
+    });
+    document.querySelectorAll('input[type=radio]:checked').forEach(r => {
+      out[r.name] = r.value;
+    });
+    return out;
+  }
+
+  function collectData() {
+    return {
+      timestamp: new Date().toISOString(),
+      dots: dots.map(d => ({ color: d.color, zone: d.zone, x: Math.round(d.px * 100), y: Math.round(d.py * 100) })),
+      answers: collectAnswers()
+    };
+  }
+
+  // ── Submit ────────────────────────────────────────────────────
+  document.getElementById('btn-submit').addEventListener('click', () => {
+    const data = collectData();
+    // In a real deployment, POST data to your endpoint here.
+    // For now, store locally and show confirmation.
+    try { localStorage.setItem('bodymap_' + Date.now(), JSON.stringify(data)); } catch(e){}
+    console.log('Body map data:', JSON.stringify(data, null, 2));
+    const box = document.getElementById('result-box');
+    box.style.display = 'block';
+    box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+
+  // ── Download JSON ─────────────────────────────────────────────
+  document.getElementById('btn-download').addEventListener('click', () => {
+    const data = collectData();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'bodymap-' + new Date().toISOString().slice(0,10) + '.json';
+    a.click();
+  });
+
+  // ── Print ─────────────────────────────────────────────────────
+  document.getElementById('btn-print').addEventListener('click', () => {
+    // Render dots onto canvases for print
+    ['front','back'].forEach(zone => {
+      const canvas = document.getElementById('canvas-' + zone);
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      dots.filter(d => d.zone === zone).forEach(d => {
+        ctx.beginPath();
+        ctx.arc(d.px * canvas.width, d.py * canvas.height, 10, 0, Math.PI * 2);
+        ctx.fillStyle = d.color === 'red' ? '#c0392b' : '#2471a3';
+        ctx.globalAlpha = 0.85;
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      });
+    });
+
+    // Build answer list
+    const answers = collectAnswers();
+    const questions = [
+      [1, 'Area(s) affected and description of discomfort'],
+      [2, 'Tasks believed to contribute'],
+      [3, 'Worse during/end of shift', 'q3'],
+      [4, 'Getting progressively worse', 'q4'],
+      [5, 'Improves away from work', 'q5'],
+      [6, 'Impact on job or home life'],
+      [7, 'Workload / rostering / pressure contribution', 'q7'],
+      [8, 'Discussed with manager / OH / union rep', 'q8'],
+      [9, 'Suggested changes'],
+      [10, 'Any other information']
+    ];
+    const keys = ['q1','q2','q3_detail','q4_detail','q5','q6','q7_detail','q8_detail','q9','q10'];
+    const radioKeys = { 3:'q3', 4:'q4', 5:'q5', 7:'q7', 8:'q8' };
+
+    let html = '';
+    questions.forEach((q, i) => {
+      const num = q[0];
+      const label = q[1];
+      const radioVal = answers[radioKeys[num]] || '';
+      const textVal = answers[keys[i]] || '';
+      const val = [radioVal, textVal].filter(Boolean).join(' – ');
+      if (val) {
+        html += `<div class="print-q"><strong>Q${num}. ${label}</strong>${val}</div>`;
+      }
+    });
+
+    document.getElementById('print-answers').innerHTML = html || '<p>No answers recorded.</p>';
+    document.getElementById('print-date').textContent = 'Date: ' + new Date().toLocaleDateString('en-GB', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+    window.print();
+  });
+
+})();
+</script>
+</body>
+</html>
