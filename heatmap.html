@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Body Mapping – Heatmap Analysis</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --red: #c0392b; --blue: #2471a3; --dark: #1a1a2e; --mid: #4a4a6a;
+    --light: #f4f6f8; --border: #d0d4db;
+  }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--light); color: var(--dark); }
+
+  header { background: var(--dark); color: #fff; padding: 18px 28px; display: flex; align-items: center; gap: 18px; border-bottom: 4px solid var(--red); }
+  header .logo-text { font-size: 13px; font-weight: 700; letter-spacing: 2px; opacity: 0.55; text-transform: uppercase; }
+  header h1 { font-size: 20px; font-weight: 600; }
+  header p.sub { font-size: 13px; opacity: 0.65; margin-top: 2px; }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 28px 18px 60px; }
+
+  /* Upload zone */
+  .upload-zone {
+    border: 2.5px dashed var(--border); border-radius: 10px; background: #fff;
+    padding: 36px 24px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s;
+    margin-bottom: 24px;
+  }
+  .upload-zone.drag-over { border-color: var(--red); background: #fdf5f5; }
+  .upload-zone h2 { font-size: 16px; color: var(--dark); margin-bottom: 8px; }
+  .upload-zone p { font-size: 13px; color: #999; margin-bottom: 16px; }
+  .upload-zone input { display: none; }
+  .btn-upload { display: inline-block; padding: 10px 24px; background: var(--red); color: #fff; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: background 0.15s; }
+  .btn-upload:hover { background: #a93226; }
+
+  /* File chips */
+  .file-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+  .chip { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; font-size: 13px; }
+  .chip .chip-name { color: var(--dark); font-weight: 500; }
+  .chip .chip-count { color: #999; font-size: 12px; }
+  .chip .chip-remove { color: #ccc; cursor: pointer; font-size: 16px; line-height: 1; transition: color 0.1s; }
+  .chip .chip-remove:hover { color: var(--red); }
+  .chip.valid { border-color: #2ecc71; }
+  .chip.invalid { border-color: #e74c3c; }
+
+  /* Controls bar */
+  .controls {
+    display: flex; gap: 14px; flex-wrap: wrap; align-items: center;
+    background: #fff; border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px 18px; margin-bottom: 24px;
+  }
+  .controls label { font-size: 13px; font-weight: 600; color: var(--mid); }
+  .controls select, .controls input[type=range] { font-size: 13px; padding: 5px 10px; border: 1px solid var(--border); border-radius: 5px; }
+  .controls .spacer { flex: 1; }
+  .btn-render { padding: 9px 22px; background: var(--red); color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; transition: background 0.15s; }
+  .btn-render:hover { background: #a93226; }
+  .btn-secondary { padding: 9px 18px; background: #fff; color: var(--mid); border: 1.5px solid var(--border); border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+  .btn-secondary:hover { background: #f0f2f5; }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px;
+  }
+  .stat-card { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 14px 20px; flex: 1; min-width: 130px; }
+  .stat-card .stat-num { font-size: 28px; font-weight: 800; color: var(--dark); line-height: 1; }
+  .stat-card .stat-label { font-size: 12px; color: #999; margin-top: 4px; }
+  .stat-card.red  .stat-num { color: var(--red); }
+  .stat-card.blue .stat-num { color: var(--blue); }
+
+  /* Main layout */
+  .main-layout { display: flex; gap: 24px; flex-wrap: wrap; }
+
+  /* Heatmap canvases */
+  .heatmap-section { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 24px; }
+  .heatmap-col { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .heatmap-col .fig-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: #8888a0; font-weight: 600; }
+  .canvas-wrap { position: relative; width: 220px; height: 484px; background: #fff; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .canvas-wrap canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+  .canvas-body { z-index: 1; }
+  .canvas-heat { z-index: 2; }
+
+  /* Colour scale legend */
+  .scale-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 8px; background: #fff; border: 1px solid var(--border); border-radius: 8px; width: 44px; }
+  .scale-wrap .scale-bar { width: 20px; height: 200px; border-radius: 4px; background: linear-gradient(to bottom, #ff0000, #ffff00, #00ff88, rgba(0,100,255,0)); }
+  .scale-wrap .scale-label { font-size: 10px; color: #999; writing-mode: horizontal-tb; text-align: center; }
+
+  /* League table */
+  .league-table { flex: 1; min-width: 280px; background: #fff; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .league-table h3 { font-size: 14px; font-weight: 700; padding: 14px 16px; border-bottom: 1px solid var(--border); background: #fafafa; }
+  .league-table table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .league-table thead th { padding: 8px 12px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #aaa; border-bottom: 1px solid var(--border); background: #fafafa; }
+  .league-table tbody tr:hover { background: #f8f8fc; }
+  .league-table tbody td { padding: 9px 12px; border-bottom: 1px solid #f0f0f5; }
+  .league-table .bar-cell { width: 90px; }
+  .mini-bar { height: 8px; border-radius: 4px; background: var(--red); min-width: 4px; }
+  .mini-bar.blue-bar { background: var(--blue); }
+  .badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; }
+  .badge.red  { background: #fdf0ef; color: var(--red); }
+  .badge.blue { background: #eaf3fb; color: var(--blue); }
+
+  /* Empty state */
+  .empty-state { text-align: center; padding: 60px 20px; color: #bbb; }
+  .empty-state svg { opacity: 0.3; margin-bottom: 16px; }
+  .empty-state p { font-size: 14px; }
+
+  @media print {
+    .upload-zone, .controls, .file-chips, .btn-secondary, .btn-render { display: none !important; }
+    body { background: #fff; }
+    .canvas-wrap { border: 1px solid #ccc; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-text">BALPA</div>
+  <div>
+    <h1>Body Mapping – Heatmap Analysis</h1>
+    <p class="sub">Aggregate musculoskeletal symptom data across respondents</p>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Upload -->
+  <div class="upload-zone" id="upload-zone">
+    <h2>Load body mapping responses</h2>
+    <p>Drag &amp; drop JSON files exported from the body mapping form, or click to browse.<br>All processing is done locally — no data leaves your browser.</p>
+    <input type="file" id="file-input" multiple accept=".json">
+    <label for="file-input" class="btn-upload">Select JSON files</label>
+  </div>
+
+  <div class="file-chips" id="file-chips"></div>
+
+  <!-- Controls -->
+  <div class="controls" id="controls-bar" style="display:none;">
+    <label>Show:</label>
+    <select id="sel-type">
+      <option value="all">All markers</option>
+      <option value="ongoing_repetitive">Ongoing / repetitive only</option>
+      <option value="one_off_injury">One-off injuries only</option>
+    </select>
+    <label style="margin-left:12px;">Radius:</label>
+    <input type="range" id="range-radius" min="20" max="80" value="40" style="width:100px;">
+    <label style="margin-left:12px;">Opacity:</label>
+    <input type="range" id="range-opacity" min="20" max="100" value="70" style="width:80px;">
+    <div class="spacer"></div>
+    <button class="btn-secondary" id="btn-print">Print / Export</button>
+    <button class="btn-render" id="btn-render">Update heatmap</button>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar" id="stats-bar" style="display:none;">
+    <div class="stat-card"><div class="stat-num" id="stat-respondents">0</div><div class="stat-label">Respondents</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Total markers</div></div>
+    <div class="stat-card red"><div class="stat-num" id="stat-red">0</div><div class="stat-label">Ongoing pain markers</div></div>
+    <div class="stat-card blue"><div class="stat-num" id="stat-blue">0</div><div class="stat-label">One-off injury markers</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-top-region">—</div><div class="stat-label">Most-reported region</div></div>
+  </div>
+
+  <!-- Empty state -->
+  <div class="empty-state" id="empty-state">
+    <svg width="64" height="64" viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="30" stroke="#aaa" stroke-width="2"/><path d="M32 18v18M32 42v4" stroke="#aaa" stroke-width="3" stroke-linecap="round"/></svg>
+    <p>Load at least one JSON response file above to generate the heatmap.</p>
+  </div>
+
+  <!-- Main viz area -->
+  <div id="viz-area" style="display:none;">
+    <div class="main-layout">
+
+      <!-- Heatmaps -->
+      <div>
+        <div class="heatmap-section">
+          <div class="heatmap-col">
+            <span class="fig-label">Front</span>
+            <div class="canvas-wrap" style="width:220px;height:484px;">
+              <canvas id="canvas-body-front" class="canvas-body" width="220" height="484"></canvas>
+              <canvas id="canvas-heat-front" class="canvas-heat" width="220" height="484"></canvas>
+            </div>
+          </div>
+          <div class="heatmap-col">
+            <span class="fig-label">Back</span>
+            <div class="canvas-wrap" style="width:220px;height:484px;">
+              <canvas id="canvas-body-back" class="canvas-body" width="220" height="484"></canvas>
+              <canvas id="canvas-heat-back" class="canvas-heat" width="220" height="484"></canvas>
+            </div>
+          </div>
+          <div class="heatmap-col" style="justify-content:center;">
+            <span class="fig-label">Scale</span>
+            <div class="scale-wrap">
+              <span class="scale-label">High</span>
+              <div class="scale-bar"></div>
+              <span class="scale-label">Low</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- League table -->
+      <div class="league-table" id="league-table">
+        <h3>Regions by frequency</h3>
+        <table>
+          <thead><tr>
+            <th>Region</th>
+            <th>Count</th>
+            <th>Type</th>
+            <th class="bar-cell"></th>
+          </tr></thead>
+          <tbody id="league-body"></tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- container -->
+
+<script>
+(function(){
+'use strict';
+
+// ── State ──────────────────────────────────────────────────────
+const responses = []; // array of parsed JSON objects
+
+// ── File loading ───────────────────────────────────────────────
+const dropZone = document.getElementById('upload-zone');
+const fileInput = document.getElementById('file-input');
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  loadFiles(Array.from(e.dataTransfer.files).filter(f => f.name.endsWith('.json')));
+});
+fileInput.addEventListener('change', e => loadFiles(Array.from(e.target.files)));
+
+function loadFiles(files) {
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (!data.markers) throw new Error('Invalid format');
+        responses.push({ file: file.name, data });
+        renderChips();
+        renderAll();
+      } catch(e) {
+        renderChips(file.name, true);
+      }
+    };
+    reader.readAsText(file);
+  });
+}
+
+// ── File chips ─────────────────────────────────────────────────
+function renderChips(invalidName, isInvalid) {
+  const el = document.getElementById('file-chips');
+  el.innerHTML = responses.map((r, i) => `
+    <div class="chip valid">
+      <span class="chip-name">${r.file}</span>
+      <span class="chip-count">${r.data.markers.length} markers</span>
+      <span class="chip-remove" onclick="removeResponse(${i})">&#215;</span>
+    </div>`).join('') + (invalidName ? `<div class="chip invalid"><span class="chip-name">${invalidName}</span><span class="chip-count">⚠ invalid</span></div>` : '');
+}
+window.removeResponse = i => { responses.splice(i, 1); renderChips(); renderAll(); };
+
+// ── Controls ───────────────────────────────────────────────────
+document.getElementById('btn-render').addEventListener('click', renderAll);
+document.getElementById('btn-print').addEventListener('click', () => window.print());
+['sel-type','range-radius','range-opacity'].forEach(id => {
+  document.getElementById(id).addEventListener('input', renderAll);
+});
+
+// ── Master render ──────────────────────────────────────────────
+function renderAll() {
+  const hasData = responses.length > 0;
+  document.getElementById('controls-bar').style.display = hasData ? 'flex' : 'none';
+  document.getElementById('stats-bar').style.display    = hasData ? 'flex' : 'none';
+  document.getElementById('empty-state').style.display  = hasData ? 'none' : 'block';
+  document.getElementById('viz-area').style.display     = hasData ? 'block' : 'none';
+  if (!hasData) return;
+
+  const typeFilter = document.getElementById('sel-type').value;
+  const radius     = parseInt(document.getElementById('range-radius').value);
+  const opacity    = parseInt(document.getElementById('range-opacity').value) / 100;
+
+  // Collect all markers matching filter
+  const allMarkers = [];
+  responses.forEach(r => {
+    (r.data.markers || []).forEach(m => {
+      if (typeFilter === 'all' || m.type === typeFilter) allMarkers.push(m);
+    });
+  });
+
+  // Stats
+  const total = allMarkers.length;
+  const reds  = allMarkers.filter(m => m.type === 'ongoing_repetitive').length;
+  const blues = allMarkers.filter(m => m.type === 'one_off_injury').length;
+  document.getElementById('stat-respondents').textContent = responses.length;
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-red').textContent  = reds;
+  document.getElementById('stat-blue').textContent = blues;
+
+  // Region frequency
+  const regionCount = {};
+  const regionType  = {};
+  allMarkers.forEach(m => {
+    regionCount[m.region] = (regionCount[m.region] || 0) + 1;
+    if (!regionType[m.region]) regionType[m.region] = { ongoing: 0, one_off: 0 };
+    if (m.type === 'ongoing_repetitive') regionType[m.region].ongoing++;
+    else regionType[m.region].one_off++;
+  });
+  const sorted = Object.entries(regionCount).sort((a,b) => b[1]-a[1]);
+  document.getElementById('stat-top-region').textContent = sorted.length ? sorted[0][0].replace(/\(.*\)/,'').trim() : '—';
+
+  // League table
+  const maxCount = sorted.length ? sorted[0][1] : 1;
+  document.getElementById('league-body').innerHTML = sorted.map(([region, count]) => {
+    const rt = regionType[region];
+    const dominant = rt.ongoing >= rt.one_off ? 'red' : 'blue';
+    const pct = Math.round(count / maxCount * 100);
+    return `<tr>
+      <td>${region}</td>
+      <td><strong>${count}</strong></td>
+      <td><span class="badge ${dominant}">${dominant === 'red' ? 'Ongoing' : 'One-off'}</span></td>
+      <td class="bar-cell"><div class="mini-bar ${dominant === 'blue' ? 'blue-bar' : ''}" style="width:${Math.max(pct,5)}%"></div></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="4" style="text-align:center;color:#bbb;padding:20px;">No data</td></tr>';
+
+  // Draw heatmaps
+  ['front','back'].forEach(zone => {
+    const markers = allMarkers.filter(m => m.view === zone);
+    drawBodyCanvas(zone);
+    drawHeatmap(zone, markers, radius, opacity, total || 1);
+  });
+}
+
+// ── Draw body SVG onto canvas ──────────────────────────────────
+const SVG_PATHS = {
+  front: `<svg viewBox="0 0 200 440" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#2c3e50" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="100" cy="36" rx="26" ry="31"/>
+    <path d="M88 64 Q88 76 90 80 L110 80 Q112 76 112 64"/>
+    <path d="M90 80 Q70 82 54 90 Q42 96 40 110"/><path d="M110 80 Q130 82 146 90 Q158 96 160 110"/>
+    <path d="M40 110 L36 180 Q38 200 44 210 L56 240 Q62 252 64 265 L68 310"/>
+    <path d="M160 110 L164 180 Q162 200 156 210 L144 240 Q138 252 136 265 L132 310"/>
+    <path d="M90 80 L88 160 Q88 190 90 210 L92 310" stroke-width="0.8" stroke-dasharray="4 4"/>
+    <path d="M110 80 L112 160 Q112 190 110 210 L108 310" stroke-width="0.8" stroke-dasharray="4 4"/>
+    <path d="M90 82 Q78 86 58 92"/><path d="M110 82 Q122 86 142 92"/>
+    <path d="M40 110 Q28 130 26 160 Q22 185 26 210 Q30 230 32 248"/>
+    <path d="M54 90 Q45 110 40 140"/>
+    <path d="M160 110 Q172 130 174 160 Q178 185 174 210 Q170 230 168 248"/>
+    <path d="M146 90 Q155 110 160 140"/>
+    <path d="M26 210 Q24 230 26 248"/><path d="M32 248 Q30 258 28 265"/>
+    <path d="M174 210 Q176 230 174 248"/><path d="M168 248 Q170 258 172 265"/>
+    <path d="M26 265 Q22 270 20 276 Q24 280 26 274"/><path d="M26 265 Q25 272 24 278 Q28 282 30 275"/>
+    <path d="M26 265 Q28 272 28 279 Q32 282 33 275"/><path d="M26 265 Q30 271 31 278 Q34 280 35 273"/>
+    <path d="M26 265 Q32 268 33 273 Q35 274 36 268"/>
+    <path d="M172 265 Q176 270 178 276 Q174 280 172 274"/><path d="M172 265 Q173 272 174 278 Q170 282 168 275"/>
+    <path d="M172 265 Q170 272 170 279 Q166 282 165 275"/><path d="M172 265 Q168 271 167 278 Q164 280 163 273"/>
+    <path d="M172 265 Q166 268 165 273 Q163 274 162 268"/>
+    <path d="M68 310 Q82 318 100 318 Q118 318 132 310"/>
+    <path d="M68 310 Q66 325 68 340"/><path d="M132 310 Q134 325 132 340"/>
+    <path d="M68 340 Q62 370 60 400 Q58 420 60 440"/>
+    <path d="M100 318 Q94 340 92 370 Q90 400 90 440"/>
+    <path d="M132 340 Q138 370 140 400 Q142 420 140 440"/>
+    <path d="M100 318 Q106 340 108 370 Q110 400 110 440"/>
+    <path d="M60 390 Q62 394 66 394 Q70 394 72 390" stroke-width="1"/>
+    <path d="M138 390 Q136 394 132 394 Q128 394 126 390" stroke-width="1"/>
+    <circle cx="100" cy="190" r="3" fill="#2c3e50" stroke="none"/>
+  </svg>`,
+  back: `<svg viewBox="0 0 200 440" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#2c3e50" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="100" cy="36" rx="26" ry="31"/>
+    <path d="M88 64 Q88 76 90 80 L110 80 Q112 76 112 64"/>
+    <path d="M90 80 Q70 82 54 90 Q42 96 40 110"/><path d="M110 80 Q130 82 146 90 Q158 96 160 110"/>
+    <path d="M100 80 L100 310" stroke-width="0.8" stroke-dasharray="5 4"/>
+    <path d="M70 100 Q64 125 72 140 Q82 148 92 140" stroke-width="1.2"/>
+    <path d="M130 100 Q136 125 128 140 Q118 148 108 140" stroke-width="1.2"/>
+    <path d="M40 110 L36 180 Q38 200 44 210 L56 240 Q62 252 64 265 L68 310"/>
+    <path d="M160 110 L164 180 Q162 200 156 210 L144 240 Q138 252 136 265 L132 310"/>
+    <path d="M40 110 Q28 130 26 160 Q22 185 26 210 Q30 230 32 248"/>
+    <path d="M54 90 Q45 110 40 140"/>
+    <path d="M160 110 Q172 130 174 160 Q178 185 174 210 Q170 230 168 248"/>
+    <path d="M146 90 Q155 110 160 140"/>
+    <path d="M26 210 Q24 230 26 248"/><path d="M32 248 Q30 258 28 265"/>
+    <path d="M174 210 Q176 230 174 248"/><path d="M168 248 Q170 258 172 265"/>
+    <path d="M26 265 Q22 270 20 276 Q24 280 26 274"/><path d="M26 265 Q25 272 24 278 Q28 282 30 275"/>
+    <path d="M26 265 Q28 272 28 279 Q32 282 33 275"/><path d="M26 265 Q30 271 31 278 Q34 280 35 273"/>
+    <path d="M26 265 Q32 268 33 273 Q35 274 36 268"/>
+    <path d="M172 265 Q176 270 178 276 Q174 280 172 274"/><path d="M172 265 Q173 272 174 278 Q170 282 168 275"/>
+    <path d="M172 265 Q170 272 170 279 Q166 282 165 275"/><path d="M172 265 Q168 271 167 278 Q164 280 163 273"/>
+    <path d="M172 265 Q166 268 165 273 Q163 274 162 268"/>
+    <path d="M68 310 Q82 322 100 322 Q118 322 132 310"/>
+    <path d="M82 318 Q88 330 100 332 Q112 330 118 318" stroke-width="1"/>
+    <path d="M68 310 Q66 325 68 340"/><path d="M132 310 Q134 325 132 340"/>
+    <path d="M68 340 Q62 370 60 400 Q58 420 60 440"/>
+    <path d="M100 322 Q94 340 92 370 Q90 400 90 440"/>
+    <path d="M132 340 Q138 370 140 400 Q142 420 140 440"/>
+    <path d="M100 322 Q106 340 108 370 Q110 400 110 440"/>
+    <path d="M60 390 Q62 394 66 394 Q70 394 72 390" stroke-width="1"/>
+    <path d="M138 390 Q136 394 132 394 Q128 394 126 390" stroke-width="1"/>
+  </svg>`
+};
+
+function drawBodyCanvas(zone) {
+  const canvas = document.getElementById('canvas-body-'+zone);
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const svgStr = SVG_PATHS[zone];
+  const blob = new Blob([svgStr], {type:'image/svg+xml;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const img = new Image();
+  img.onload = () => { ctx.drawImage(img, 10, 22, 200, 440); URL.revokeObjectURL(url); };
+  img.src = url;
+}
+
+// ── Gaussian kernel density heatmap ───────────────────────────
+function drawHeatmap(zone, markers, radius, masterOpacity, totalAll) {
+  const canvas = document.getElementById('canvas-heat-'+zone);
+  const W = canvas.width, H = canvas.height;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+  if (!markers.length) return;
+
+  // Accumulate intensity into a float buffer
+  const buf = new Float32Array(W * H);
+  markers.forEach(m => {
+    const cx = (m.position_pct.x / 100) * 200 + 10; // offset matches body canvas placement
+    const cy = (m.position_pct.y / 100) * 440 + 22;
+    const r  = radius;
+    const x0 = Math.max(0, Math.floor(cx - r)), x1 = Math.min(W, Math.ceil(cx + r));
+    const y0 = Math.max(0, Math.floor(cy - r)), y1 = Math.min(H, Math.ceil(cy + r));
+    for (let y = y0; y < y1; y++) {
+      for (let x = x0; x < x1; x++) {
+        const dx = x - cx, dy = y - cy;
+        const d2 = (dx*dx + dy*dy) / (r * r);
+        if (d2 < 1) {
+          // Gaussian-ish kernel
+          const v = Math.exp(-3 * d2);
+          buf[y * W + x] += v;
+        }
+      }
+    }
+  });
+
+  // Find max for normalisation
+  let maxVal = 0;
+  for (let i = 0; i < buf.length; i++) if (buf[i] > maxVal) maxVal = buf[i];
+  if (maxVal === 0) return;
+
+  // Colorise: 0→transparent, low→blue-purple, mid→yellow, high→red
+  const imgData = ctx.createImageData(W, H);
+  for (let i = 0; i < buf.length; i++) {
+    const t = buf[i] / maxVal; // 0–1
+    if (t < 0.005) continue;
+    const [r,g,b] = heatColor(t);
+    const a = Math.round(t * 220 * masterOpacity);
+    imgData.data[i*4]   = r;
+    imgData.data[i*4+1] = g;
+    imgData.data[i*4+2] = b;
+    imgData.data[i*4+3] = Math.min(a, 220);
+  }
+  ctx.putImageData(imgData, 0, 0);
+}
+
+function heatColor(t) {
+  // Blue(0) → Cyan → Green → Yellow → Red(1)
+  const stops = [
+    [0,   0,   0, 255],
+    [0.25,0, 200, 255],
+    [0.5, 0, 255,  80],
+    [0.75,255,200,  0],
+    [1,   255,  0,  0],
+  ];
+  let lo = stops[0], hi = stops[stops.length-1];
+  for (let i = 0; i < stops.length-1; i++) {
+    if (t >= stops[i][0] && t <= stops[i+1][0]) { lo = stops[i]; hi = stops[i+1]; break; }
+  }
+  const f = lo[0] === hi[0] ? 0 : (t - lo[0]) / (hi[0] - lo[0]);
+  return [
+    Math.round(lo[1] + f*(hi[1]-lo[1])),
+    Math.round(lo[2] + f*(hi[2]-lo[2])),
+    Math.round(lo[3] + f*(hi[3]-lo[3])),
+  ];
+}
+
+})();
+</script>
+</body>
+</html>
