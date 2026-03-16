@@ -45,7 +45,7 @@
   .map-inner { display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; }
   .figure-col { display: flex; flex-direction: column; align-items: center; gap: 8px; }
   .figure-col .fig-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: #8888a0; font-weight: 600; }
-  .body-zone { position: relative; width: 200px; height: 440px; cursor: crosshair; }
+  .body-zone { position: relative; width: 200px; height: 462px; cursor: crosshair; }
   .body-zone svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
   .placed-dot { position: absolute; width: 22px; height: 22px; border-radius: 50%; transform: translate(-50%, -50%); cursor: pointer; opacity: 0.85; border: 2px solid rgba(255,255,255,0.8); box-shadow: 0 1px 5px rgba(0,0,0,0.3); transition: transform 0.1s, opacity 0.1s; z-index: 10; }
   .placed-dot:hover { transform: translate(-50%,-50%) scale(1.3); opacity: 1; }
@@ -120,7 +120,7 @@
   @media (max-width: 700px) {
     .map-and-summary { flex-direction: column; }
     .summary-panel { width: 100%; }
-    .body-zone { width: 150px; height: 330px; }
+    .body-zone { width: 150px; height: 347px; }
     header h1 { font-size: 16px; }
   }
 </style>
@@ -160,7 +160,7 @@
         <div class="figure-col">
           <span class="fig-label">Front</span>
           <div class="body-zone" id="zone-front">
-            <svg viewBox="0 0 200 440" xmlns="http://www.w3.org/2000/svg" fill="none">
+            <svg viewBox="0 0 200 462" xmlns="http://www.w3.org/2000/svg" fill="none">
               <!-- Arms behind torso -->
               <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" stroke-linejoin="round" d="M40,90 C30,106 14,156 14,199 L30,203 C30,161 46,113 58,97 Z"/>
               <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M14,199 L30,203 L30,260 L14,257 Z"/>
@@ -174,11 +174,19 @@
               <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M91,62 L109,62 L111,81 L89,81 Z"/>
               <!-- Head -->
               <ellipse fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" cx="100" cy="34" rx="26" ry="29"/>
-              <!-- Legs -->
+              <!-- Thighs -->
               <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M66,315 C60,319 54,332 54,348 L52,394 Q52,403 59,404 L81,404 Q87,402 87,394 L87,344 C87,328 80,316 74,314 Z"/>
-              <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M54,404 L83,404 L81,437 Q79,442 71,442 L63,442 Q57,440 57,435 Z"/>
               <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M134,315 C140,319 146,332 146,348 L148,394 Q148,403 141,404 L119,404 Q113,402 113,394 L113,344 C113,328 120,316 126,314 Z"/>
-              <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M146,404 L117,404 L119,437 Q121,442 129,442 L137,442 Q143,440 143,435 Z"/>
+              <!-- Lower legs (shortened to y=430 to make room for feet) -->
+              <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M54,404 L83,404 L80,430 Q77,435 69,435 L62,435 Q55,433 54,428 Z"/>
+              <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M146,404 L117,404 L120,430 Q123,435 131,435 L138,435 Q145,433 146,428 Z"/>
+              <!-- Left foot (turns out slightly left) -->
+              <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" stroke-linejoin="round" d="M54,428 Q55,433 62,435 L69,435 Q77,435 80,430 Q86,434 85,443 Q82,452 70,456 L50,454 Q39,450 38,442 Q39,434 47,429 Z"/>
+              <!-- Right foot (turns out slightly right) -->
+              <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" stroke-linejoin="round" d="M146,428 Q145,433 138,435 L131,435 Q123,435 120,430 Q114,434 115,443 Q118,452 130,456 L150,454 Q161,450 162,442 Q161,434 153,429 Z"/>
+              <!-- Toe crease lines -->
+              <path stroke="#8888a0" stroke-width="0.9" stroke-linecap="round" d="M42,448 Q56,454 72,450"/>
+              <path stroke="#8888a0" stroke-width="0.9" stroke-linecap="round" d="M128,450 Q144,454 158,448"/>
               <!-- Face detail -->
               <circle cx="91" cy="30" r="2.5" fill="#3a3a52"/>
               <circle cx="109" cy="30" r="2.5" fill="#3a3a52"/>
@@ -202,7 +210,7 @@
         <div class="figure-col">
           <span class="fig-label">Back</span>
           <div class="body-zone" id="zone-back">
-            <svg viewBox="0 0 200 440" xmlns="http://www.w3.org/2000/svg" fill="none">
+            <svg viewBox="0 0 200 462" xmlns="http://www.w3.org/2000/svg" fill="none">
               <!-- Arms -->
               <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" stroke-linejoin="round" d="M40,90 C30,106 14,156 14,199 L30,203 C30,161 46,113 58,97 Z"/>
               <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M14,199 L30,203 L30,260 L14,257 Z"/>
@@ -216,11 +224,16 @@
               <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M91,62 L109,62 L111,81 L89,81 Z"/>
               <!-- Head -->
               <ellipse fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" cx="100" cy="34" rx="26" ry="29"/>
-              <!-- Legs -->
+              <!-- Upper legs -->
               <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M66,315 C60,319 54,332 54,348 L52,394 Q52,403 59,404 L81,404 Q87,402 87,394 L87,344 C87,328 80,316 74,314 Z"/>
-              <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M54,404 L83,404 L81,437 Q79,442 71,442 L63,442 Q57,440 57,435 Z"/>
               <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M134,315 C140,319 146,332 146,348 L148,394 Q148,403 141,404 L119,404 Q113,402 113,394 L113,344 C113,328 120,316 126,314 Z"/>
-              <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M146,404 L117,404 L119,437 Q121,442 129,442 L137,442 Q143,440 143,435 Z"/>
+              <!-- Lower legs (shortened to accommodate feet) -->
+              <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M54,404 L83,404 L81,428 Q79,430 71,430 L63,430 Q57,428 57,424 Z"/>
+              <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M146,404 L117,404 L119,428 Q121,430 129,430 L137,430 Q143,428 143,424 Z"/>
+              <!-- Left foot back (heel visible, turns slightly left) -->
+              <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" stroke-linejoin="round" d="M57,424 Q58,429 65,431 L71,431 Q79,431 81,426 Q87,430 86,439 Q83,448 71,452 L51,450 Q40,446 39,438 Q40,430 48,425 Z"/>
+              <!-- Right foot back (heel visible, turns slightly right) -->
+              <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" stroke-linejoin="round" d="M143,424 Q142,429 135,431 L129,431 Q121,431 119,426 Q113,430 114,439 Q117,448 129,452 L149,450 Q160,446 161,438 Q160,430 152,425 Z"/>
               <!-- Spine -->
               <path stroke="#aaa" stroke-width="1" stroke-dasharray="4,3" d="M100,82 L100,314"/>
               <!-- Shoulder blades -->
@@ -235,6 +248,9 @@
               <!-- Elbow creases -->
               <path stroke="#8888a0" stroke-width="1" stroke-linecap="round" d="M13,196 Q22,206 31,196"/>
               <path stroke="#8888a0" stroke-width="1" stroke-linecap="round" d="M169,196 Q178,206 187,196"/>
+              <!-- Heel crease lines -->
+              <path stroke="#8888a0" stroke-width="0.9" stroke-linecap="round" d="M48,433 Q64,437 80,432"/>
+              <path stroke="#8888a0" stroke-width="0.9" stroke-linecap="round" d="M120,432 Q136,437 152,433"/>
             </svg>
           </div>
         </div>
@@ -381,8 +397,10 @@ const REGIONS = {
     { label:'Right thigh',          x:[56,75], y:[71,92] },
     { label:'Left knee',            x:[25,42], y:[89,94] },
     { label:'Right knee',           x:[58,74], y:[89,94] },
-    { label:'Left shin',            x:[27,42], y:[92,100]},
-    { label:'Right shin',           x:[58,73], y:[92,100]},
+    { label:'Left shin',            x:[27,42], y:[87,93] },
+    { label:'Right shin',           x:[58,73], y:[87,93] },
+    { label:'Left foot',            x:[19,43], y:[92,99] },
+    { label:'Right foot',           x:[57,81], y:[92,99] },
   ],
   back: [
     { label:'Head (back)',          x:[37,63], y:[1,15]  },
@@ -409,8 +427,10 @@ const REGIONS = {
     { label:'Right hamstring',      x:[56,75], y:[71,92] },
     { label:'Left knee (back)',     x:[25,42], y:[89,94] },
     { label:'Right knee (back)',    x:[58,74], y:[89,94] },
-    { label:'Left calf',            x:[27,42], y:[92,100]},
-    { label:'Right calf',           x:[58,73], y:[92,100]},
+    { label:'Left calf',            x:[27,42], y:[87,93] },
+    { label:'Right calf',           x:[58,73], y:[87,93] },
+    { label:'Left foot (back)',     x:[19,43], y:[92,99] },
+    { label:'Right foot (back)',    x:[57,81], y:[92,99] },
   ]
 };
 

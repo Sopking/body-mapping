@@ -73,7 +73,7 @@
   .heatmap-section { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 24px; }
   .heatmap-col { display: flex; flex-direction: column; align-items: center; gap: 8px; }
   .heatmap-col .fig-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: #8888a0; font-weight: 600; }
-  .canvas-wrap { position: relative; width: 220px; height: 484px; background: #fff; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .canvas-wrap { position: relative; width: 220px; height: 506px; background: #fff; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
   .canvas-wrap canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
   .canvas-body { z-index: 1; }
   .canvas-heat { z-index: 2; }
@@ -183,16 +183,16 @@
         <div class="heatmap-section">
           <div class="heatmap-col">
             <span class="fig-label">Front</span>
-            <div class="canvas-wrap" style="width:220px;height:484px;">
-              <canvas id="canvas-body-front" class="canvas-body" width="220" height="484"></canvas>
-              <canvas id="canvas-heat-front" class="canvas-heat" width="220" height="484"></canvas>
+            <div class="canvas-wrap" style="width:220px;height:506px;">
+              <canvas id="canvas-body-front" class="canvas-body" width="220" height="506"></canvas>
+              <canvas id="canvas-heat-front" class="canvas-heat" width="220" height="506"></canvas>
             </div>
           </div>
           <div class="heatmap-col">
             <span class="fig-label">Back</span>
-            <div class="canvas-wrap" style="width:220px;height:484px;">
-              <canvas id="canvas-body-back" class="canvas-body" width="220" height="484"></canvas>
-              <canvas id="canvas-heat-back" class="canvas-heat" width="220" height="484"></canvas>
+            <div class="canvas-wrap" style="width:220px;height:506px;">
+              <canvas id="canvas-body-back" class="canvas-body" width="220" height="506"></canvas>
+              <canvas id="canvas-heat-back" class="canvas-heat" width="220" height="506"></canvas>
             </div>
           </div>
           <div class="heatmap-col" style="justify-content:center;">
@@ -370,7 +370,7 @@ function renderAll() {
 
 // ── Draw body SVG onto canvas ──────────────────────────────────
 const SVG_PATHS = {
-  front: `<svg viewBox="0 0 200 440" xmlns="http://www.w3.org/2000/svg" fill="none">
+  front: `<svg viewBox="0 0 200 462" xmlns="http://www.w3.org/2000/svg" fill="none">
     <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" stroke-linejoin="round" d="M40,90 C30,106 14,156 14,199 L30,203 C30,161 46,113 58,97 Z"/>
     <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M14,199 L30,203 L30,260 L14,257 Z"/>
     <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M14,257 L30,260 Q32,275 28,283 Q22,290 14,285 Q7,278 10,268 Z"/>
@@ -381,9 +381,11 @@ const SVG_PATHS = {
     <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M91,62 L109,62 L111,81 L89,81 Z"/>
     <ellipse fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" cx="100" cy="34" rx="26" ry="29"/>
     <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M66,315 C60,319 54,332 54,348 L52,394 Q52,403 59,404 L81,404 Q87,402 87,394 L87,344 C87,328 80,316 74,314 Z"/>
-    <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M54,404 L83,404 L81,437 Q79,442 71,442 L63,442 Q57,440 57,435 Z"/>
     <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M134,315 C140,319 146,332 146,348 L148,394 Q148,403 141,404 L119,404 Q113,402 113,394 L113,344 C113,328 120,316 126,314 Z"/>
-    <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M146,404 L117,404 L119,437 Q121,442 129,442 L137,442 Q143,440 143,435 Z"/>
+    <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M54,404 L83,404 L80,430 Q77,435 69,435 L62,435 Q55,433 54,428 Z"/>
+    <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M146,404 L117,404 L120,430 Q123,435 131,435 L138,435 Q145,433 146,428 Z"/>
+    <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" stroke-linejoin="round" d="M54,428 Q55,433 62,435 L69,435 Q77,435 80,430 Q86,434 85,443 Q82,452 70,456 L50,454 Q39,450 38,442 Q39,434 47,429 Z"/>
+    <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" stroke-linejoin="round" d="M146,428 Q145,433 138,435 L131,435 Q123,435 120,430 Q114,434 115,443 Q118,452 130,456 L150,454 Q161,450 162,442 Q161,434 153,429 Z"/>
     <circle cx="91" cy="30" r="2.5" fill="#3a3a52"/><circle cx="109" cy="30" r="2.5" fill="#3a3a52"/>
     <path stroke="#3a3a52" stroke-width="1.2" stroke-linecap="round" d="M95,44 Q100,48 105,44"/>
     <path stroke="#8888a0" stroke-width="1" stroke-linecap="round" d="M91,85 Q77,89 57,95"/>
@@ -394,8 +396,10 @@ const SVG_PATHS = {
     <path stroke="#8888a0" stroke-width="1" stroke-linecap="round" d="M119,396 Q131,402 145,396"/>
     <path stroke="#8888a0" stroke-width="1" stroke-linecap="round" d="M13,196 Q22,206 31,196"/>
     <path stroke="#8888a0" stroke-width="1" stroke-linecap="round" d="M169,196 Q178,206 187,196"/>
+    <path stroke="#8888a0" stroke-width="0.9" stroke-linecap="round" d="M40,437 Q56,441 72,437"/>
+    <path stroke="#8888a0" stroke-width="0.9" stroke-linecap="round" d="M128,437 Q144,441 160,437"/>
   </svg>`,
-  back: `<svg viewBox="0 0 200 440" xmlns="http://www.w3.org/2000/svg" fill="none">
+  back: `<svg viewBox="0 0 200 462" xmlns="http://www.w3.org/2000/svg" fill="none">
     <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" stroke-linejoin="round" d="M40,90 C30,106 14,156 14,199 L30,203 C30,161 46,113 58,97 Z"/>
     <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M14,199 L30,203 L30,260 L14,257 Z"/>
     <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M14,257 L30,260 Q32,275 28,283 Q22,290 14,285 Q7,278 10,268 Z"/>
@@ -406,9 +410,11 @@ const SVG_PATHS = {
     <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M91,62 L109,62 L111,81 L89,81 Z"/>
     <ellipse fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" cx="100" cy="34" rx="26" ry="29"/>
     <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M66,315 C60,319 54,332 54,348 L52,394 Q52,403 59,404 L81,404 Q87,402 87,394 L87,344 C87,328 80,316 74,314 Z"/>
-    <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M54,404 L83,404 L81,437 Q79,442 71,442 L63,442 Q57,440 57,435 Z"/>
     <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M134,315 C140,319 146,332 146,348 L148,394 Q148,403 141,404 L119,404 Q113,402 113,394 L113,344 C113,328 120,316 126,314 Z"/>
-    <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M146,404 L117,404 L119,437 Q121,442 129,442 L137,442 Q143,440 143,435 Z"/>
+    <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M54,404 L83,404 L81,428 Q79,430 71,430 L63,430 Q57,428 57,424 Z"/>
+    <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" d="M146,404 L117,404 L119,428 Q121,430 129,430 L137,430 Q143,428 143,424 Z"/>
+    <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" stroke-linejoin="round" d="M57,424 Q58,429 65,431 L71,431 Q79,431 81,426 Q87,430 86,439 Q83,448 71,452 L51,450 Q40,446 39,438 Q40,430 48,425 Z"/>
+    <path fill="#ede8de" stroke="#3a3a52" stroke-width="1.4" stroke-linejoin="round" d="M143,424 Q142,429 135,431 L129,431 Q121,431 119,426 Q113,430 114,439 Q117,448 129,452 L149,450 Q160,446 161,438 Q160,430 152,425 Z"/>
     <path stroke="#aaa" stroke-width="1" stroke-dasharray="4,3" d="M100,82 L100,314"/>
     <path stroke="#8888a0" stroke-width="1.3" stroke-linecap="round" d="M70,100 Q62,123 72,139 Q82,149 93,140"/>
     <path stroke="#8888a0" stroke-width="1.3" stroke-linecap="round" d="M130,100 Q138,123 128,139 Q118,149 107,140"/>
@@ -418,6 +424,8 @@ const SVG_PATHS = {
     <path stroke="#8888a0" stroke-width="1" stroke-linecap="round" d="M119,396 Q131,402 145,396"/>
     <path stroke="#8888a0" stroke-width="1" stroke-linecap="round" d="M13,196 Q22,206 31,196"/>
     <path stroke="#8888a0" stroke-width="1" stroke-linecap="round" d="M169,196 Q178,206 187,196"/>
+    <path stroke="#8888a0" stroke-width="0.9" stroke-linecap="round" d="M48,433 Q64,437 80,432"/>
+    <path stroke="#8888a0" stroke-width="0.9" stroke-linecap="round" d="M120,432 Q136,437 152,433"/>
   </svg>`
 };
 
@@ -431,7 +439,7 @@ function drawBodyCanvas(zone) {
   const blob = new Blob([svgStr], {type:'image/svg+xml;charset=utf-8'});
   const url = URL.createObjectURL(blob);
   const img = new Image();
-  img.onload = () => { ctx.drawImage(img, 10, 22, 200, 440); URL.revokeObjectURL(url); };
+  img.onload = () => { ctx.drawImage(img, 10, 22, 200, 462); URL.revokeObjectURL(url); };
   img.src = url;
 }
 
@@ -447,7 +455,7 @@ function drawHeatmap(zone, markers, radius, masterOpacity, totalAll) {
   const buf = new Float32Array(W * H);
   markers.forEach(m => {
     const cx = (m.position_pct.x / 100) * 200 + 10; // offset matches body canvas placement
-    const cy = (m.position_pct.y / 100) * 440 + 22;
+    const cy = (m.position_pct.y / 100) * 462 + 22;
     const r  = radius;
     const x0 = Math.max(0, Math.floor(cx - r)), x1 = Math.min(W, Math.ceil(cx + r));
     const y0 = Math.max(0, Math.floor(cy - r)), y1 = Math.min(H, Math.ceil(cy + r));
