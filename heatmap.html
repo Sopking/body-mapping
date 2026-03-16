@@ -123,13 +123,8 @@
 
   <!-- Sheet config -->
   <div id="sheet-config" style="background:#fff;border:1px solid var(--border);border-left:4px solid var(--blue);border-radius:6px;padding:14px 18px;margin-bottom:18px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
-    <div style="flex:1;min-width:200px;">
-      <label style="font-size:12px;font-weight:700;color:var(--mid);display:block;margin-bottom:4px;">GOOGLE APPS SCRIPT URL</label>
-      <input id="sheet-url" type="text" placeholder="Paste your Apps Script web app URL here…"
-        style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:5px;font-size:13px;font-family:inherit;">
-    </div>
-    <button id="btn-load-sheet" class="btn-render" style="margin-top:18px;">Load from Sheet</button>
-    <span id="sheet-status" style="font-size:12px;color:#999;margin-top:18px;"></span>
+    <button id="btn-load-sheet" class="btn-render">↻ Refresh data</button>
+    <span id="sheet-status" style="font-size:12px;color:#999;"></span>
   </div>
 
   <!-- Upload -->
@@ -233,27 +228,31 @@
 const responses = []; // array of parsed JSON objects
 
 // ── Load from Google Sheet ──────────────────────────────────────
-document.getElementById('btn-load-sheet').addEventListener('click', async () => {
-  const url = document.getElementById('sheet-url').value.trim();
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbyQjUCKWHVIzp-_dMDeXdx30LdQWVc43lLYsx6vwB-gRt2pYcCj1MmTwVIPlTZPCsX_sQ/exec';
+
+async function loadFromSheet() {
   const status = document.getElementById('sheet-status');
-  if (!url) { status.textContent = '⚠ Please enter a URL first.'; return; }
   status.textContent = 'Loading…';
   try {
-    const res = await fetch(url, { mode: 'cors' });
+    const res = await fetch(SHEET_URL, { mode: 'cors' });
     const json = await res.json();
     if (!Array.isArray(json)) throw new Error('Unexpected response format');
-    // Clear existing and reload
     responses.length = 0;
     json.forEach((data, i) => {
       if (data.markers) responses.push({ file: 'Sheet row ' + (i+1), data });
     });
-    status.textContent = `✅ Loaded ${responses.length} response(s)`;
+    status.textContent = `✅ ${responses.length} response(s) loaded`;
     renderChips();
     renderAll();
   } catch(e) {
-    status.textContent = '❌ Failed: ' + e.message + '. Make sure the script is deployed with "Anyone" access.';
+    status.textContent = '❌ Failed to load: ' + e.message;
   }
-});
+}
+
+document.getElementById('btn-load-sheet').addEventListener('click', loadFromSheet);
+
+// Auto-load on page open
+window.addEventListener('load', loadFromSheet);
 
 // ── File loading ───────────────────────────────────────────────
 const dropZone = document.getElementById('upload-zone');
