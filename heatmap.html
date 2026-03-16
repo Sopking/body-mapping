@@ -19,24 +19,6 @@
 
   .container { max-width: 1100px; margin: 0 auto; padding: 28px 18px 60px; }
 
-  /* Upload zone */
-  .upload-zone {
-    border: 2.5px dashed var(--border); border-radius: 10px; background: #fff;
-    padding: 36px 24px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s;
-    margin-bottom: 24px;
-  }
-  .upload-zone.drag-over { border-color: var(--red); background: #fdf5f5; }
-  .upload-zone h2 { font-size: 16px; color: var(--dark); margin-bottom: 8px; }
-  .upload-zone p { font-size: 13px; color: #999; margin-bottom: 16px; }
-  .upload-zone input { display: none; }
-  .btn-upload { display: inline-block; padding: 10px 24px; background: var(--red); color: #fff; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: background 0.15s; }
-  .btn-upload:hover { background: #a93226; }
-
-  /* File chips */
-  .file-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
-  .chip { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; font-size: 13px; }
-  .chip .chip-name { color: var(--dark); font-weight: 500; }
-  .chip .chip-count { color: #999; font-size: 12px; }
   .chip .chip-remove { color: #ccc; cursor: pointer; font-size: 16px; line-height: 1; transition: color 0.1s; }
   .chip .chip-remove:hover { color: var(--red); }
   .chip.valid { border-color: #2ecc71; }
@@ -103,7 +85,7 @@
   .empty-state p { font-size: 14px; }
 
   @media print {
-    .upload-zone, .controls, .file-chips, .btn-secondary, .btn-render { display: none !important; }
+    .controls, .btn-secondary, .btn-render, #sheet-config { display: none !important; }
     body { background: #fff; }
     .canvas-wrap { border: 1px solid #ccc; }
   }
@@ -128,15 +110,6 @@
     <span id="sheet-status" style="font-size:12px;color:#999;"></span>
   </div>
 
-  <!-- Upload -->
-  <div class="upload-zone" id="upload-zone">
-    <h2>Load body mapping responses</h2>
-    <p>Drag &amp; drop JSON files exported from the body mapping form, or click to browse.<br>Or use the sheet loader above to pull all responses automatically.<br><small style="color:#bbb;">All processing is done locally — no data leaves your browser.</small></p>
-    <input type="file" id="file-input" multiple accept=".json">
-    <label for="file-input" class="btn-upload">Select JSON files</label>
-  </div>
-
-  <div class="file-chips" id="file-chips"></div>
 
   <!-- Controls -->
   <div class="controls" id="controls-bar" style="display:none;">
@@ -297,46 +270,8 @@ function exportCSV() {
 }
 document.getElementById('btn-export-csv').addEventListener('click', exportCSV);
 
-// ── File loading ───────────────────────────────────────────────
-const dropZone = document.getElementById('upload-zone');
-const fileInput = document.getElementById('file-input');
-
-dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-dropZone.addEventListener('drop', e => {
-  e.preventDefault(); dropZone.classList.remove('drag-over');
-  loadFiles(Array.from(e.dataTransfer.files).filter(f => f.name.endsWith('.json')));
-});
-fileInput.addEventListener('change', e => loadFiles(Array.from(e.target.files)));
-
-function loadFiles(files) {
-  files.forEach(file => {
-    const reader = new FileReader();
-    reader.onload = ev => {
-      try {
-        const data = JSON.parse(ev.target.result);
-        if (!data.markers) throw new Error('Invalid format');
-        responses.push({ file: file.name, data });
-        renderChips();
-        renderAll();
-      } catch(e) {
-        renderChips(file.name, true);
-      }
-    };
-    reader.readAsText(file);
-  });
-}
-
-// ── File chips ─────────────────────────────────────────────────
-function renderChips(invalidName, isInvalid) {
-  const el = document.getElementById('file-chips');
-  el.innerHTML = responses.map((r, i) => `
-    <div class="chip valid">
-      <span class="chip-name">${r.file}</span>
-      <span class="chip-count">${r.data.markers.length} markers</span>
-      <span class="chip-remove" onclick="removeResponse(${i})">&#215;</span>
-    </div>`).join('') + (invalidName ? `<div class="chip invalid"><span class="chip-name">${invalidName}</span><span class="chip-count">⚠ invalid</span></div>` : '');
-}
+// ── File chips (stub — kept for renderAll compatibility) ────────
+function renderChips() {}
 window.removeResponse = i => { responses.splice(i, 1); renderChips(); renderAll(); };
 
 // ── Controls ───────────────────────────────────────────────────
