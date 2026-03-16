@@ -597,12 +597,49 @@ function collectData() {
   };
 }
 
+// ── CONFIGURATION ─────────────────────────────────────────────────────────────
+// Paste your Google Apps Script web app URL here after deploying:
+const SUBMIT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
+// ──────────────────────────────────────────────────────────────────────────────
+
 // ── Submit ────────────────────────────────────────────────────────────────────
-document.getElementById('btn-submit').addEventListener('click', () => {
+document.getElementById('btn-submit').addEventListener('click', async () => {
   const data = collectData();
+  const btn  = document.getElementById('btn-submit');
+  const box  = document.getElementById('result-box');
+
+  // Always save locally as backup
   try { localStorage.setItem('bodymap_'+Date.now(), JSON.stringify(data)); } catch(e){}
-  // To send to a server: fetch('/submit', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) })
-  const box = document.getElementById('result-box');
+
+  if (SUBMIT_URL && SUBMIT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
+    btn.textContent = 'Submitting…';
+    btn.disabled = true;
+    try {
+      await fetch(SUBMIT_URL, {
+        method: 'POST',
+        mode: 'no-cors', // Apps Script requires no-cors
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      box.innerHTML = '✅ <strong>Submitted successfully.</strong> Your response has been recorded. Thank you — this information will be used anonymously to identify and address musculoskeletal risks.';
+      box.style.background = '#eafaf1';
+      box.style.borderColor = '#2ecc71';
+      box.style.color = '#1a5c34';
+    } catch(err) {
+      box.innerHTML = '⚠️ <strong>Could not reach the server.</strong> Your response has been saved locally. Please use <em>Download as JSON</em> and send the file to your safety rep.';
+      box.style.background = '#fef9e7';
+      box.style.borderColor = '#f39c12';
+      box.style.color = '#7d6608';
+    }
+    btn.textContent = 'Save & Submit';
+    btn.disabled = false;
+  } else {
+    box.innerHTML = '✅ <strong>Saved locally.</strong> Your response has been saved to this browser. Use <em>Download as JSON</em> to send it to your safety rep.';
+    box.style.background = '#eafaf1';
+    box.style.borderColor = '#2ecc71';
+    box.style.color = '#1a5c34';
+  }
+
   box.style.display = 'block';
   box.scrollIntoView({ behavior:'smooth', block:'center' });
 });

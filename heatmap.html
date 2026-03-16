@@ -121,10 +121,21 @@
 
 <div class="container">
 
+  <!-- Sheet config -->
+  <div id="sheet-config" style="background:#fff;border:1px solid var(--border);border-left:4px solid var(--blue);border-radius:6px;padding:14px 18px;margin-bottom:18px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+    <div style="flex:1;min-width:200px;">
+      <label style="font-size:12px;font-weight:700;color:var(--mid);display:block;margin-bottom:4px;">GOOGLE APPS SCRIPT URL</label>
+      <input id="sheet-url" type="text" placeholder="Paste your Apps Script web app URL here…"
+        style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:5px;font-size:13px;font-family:inherit;">
+    </div>
+    <button id="btn-load-sheet" class="btn-render" style="margin-top:18px;">Load from Sheet</button>
+    <span id="sheet-status" style="font-size:12px;color:#999;margin-top:18px;"></span>
+  </div>
+
   <!-- Upload -->
   <div class="upload-zone" id="upload-zone">
     <h2>Load body mapping responses</h2>
-    <p>Drag &amp; drop JSON files exported from the body mapping form, or click to browse.<br>All processing is done locally — no data leaves your browser.</p>
+    <p>Drag &amp; drop JSON files exported from the body mapping form, or click to browse.<br>Or use the sheet loader above to pull all responses automatically.<br><small style="color:#bbb;">All processing is done locally — no data leaves your browser.</small></p>
     <input type="file" id="file-input" multiple accept=".json">
     <label for="file-input" class="btn-upload">Select JSON files</label>
   </div>
@@ -220,6 +231,29 @@
 
 // ── State ──────────────────────────────────────────────────────
 const responses = []; // array of parsed JSON objects
+
+// ── Load from Google Sheet ──────────────────────────────────────
+document.getElementById('btn-load-sheet').addEventListener('click', async () => {
+  const url = document.getElementById('sheet-url').value.trim();
+  const status = document.getElementById('sheet-status');
+  if (!url) { status.textContent = '⚠ Please enter a URL first.'; return; }
+  status.textContent = 'Loading…';
+  try {
+    const res = await fetch(url, { mode: 'cors' });
+    const json = await res.json();
+    if (!Array.isArray(json)) throw new Error('Unexpected response format');
+    // Clear existing and reload
+    responses.length = 0;
+    json.forEach((data, i) => {
+      if (data.markers) responses.push({ file: 'Sheet row ' + (i+1), data });
+    });
+    status.textContent = `✅ Loaded ${responses.length} response(s)`;
+    renderChips();
+    renderAll();
+  } catch(e) {
+    status.textContent = '❌ Failed: ' + e.message + '. Make sure the script is deployed with "Anyone" access.';
+  }
+});
 
 // ── File loading ───────────────────────────────────────────────
 const dropZone = document.getElementById('upload-zone');
