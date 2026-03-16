@@ -124,6 +124,7 @@
   <!-- Sheet config -->
   <div id="sheet-config" style="background:#fff;border:1px solid var(--border);border-left:4px solid var(--blue);border-radius:6px;padding:14px 18px;margin-bottom:18px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
     <button id="btn-load-sheet" class="btn-render">↻ Refresh data</button>
+    <button id="btn-export-csv" class="btn-render" style="background:#27ae60;" disabled>⬇ Download CSV</button>
     <span id="sheet-status" style="font-size:12px;color:#999;"></span>
   </div>
 
@@ -242,6 +243,7 @@ async function loadFromSheet() {
       if (data.markers) responses.push({ file: 'Sheet row ' + (i+1), data });
     });
     status.textContent = `✅ ${responses.length} response(s) loaded`;
+    document.getElementById('btn-export-csv').disabled = responses.length === 0;
     renderChips();
     renderAll();
   } catch(e) {
@@ -253,6 +255,47 @@ document.getElementById('btn-load-sheet').addEventListener('click', loadFromShee
 
 // Auto-load on page open
 window.addEventListener('load', loadFromSheet);
+
+// ── CSV export ─────────────────────────────────────────────────
+function exportCSV() {
+  if (!responses.length) return;
+  const headers = [
+    'Timestamp', 'Markers (count)', 'Regions affected',
+    'Ongoing pain markers', 'One-off injury markers',
+    'Q1 – Areas & description', 'Q2 – Contributing tasks',
+    'Q3 – Worse during shift', 'Q3 – Detail',
+    'Q4 – Getting worse over time', 'Q4 – Detail',
+    'Q5 – Improves away from work', 'Q6 – Impact on job / home life',
+    'Q7 – Workload contribution', 'Q7 – Detail',
+    'Q8 – Discussed with manager/OH/union', 'Q8 – Detail',
+    'Q9 – Suggested changes', 'Q10 – Other information'
+  ];
+  const escape = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const rows = responses.map(r => {
+    const d = r.data;
+    const markers = d.markers || [];
+    const a = d.answers || {};
+    const ongoing = markers.filter(m => m.type === 'ongoing_repetitive').length;
+    const oneOff  = markers.filter(m => m.type === 'one_off_injury').length;
+    const regions = [...new Set(markers.map(m => m.region))].join('; ');
+    return [
+      d.timestamp || '', markers.length, regions, ongoing, oneOff,
+      a.q1 || '', a.q2 || '', a.q3 || '', a.q3_detail || '',
+      a.q4 || '', a.q4_detail || '', a.q5 || '', a.q6 || '',
+      a.q7 || '', a.q7_detail || '', a.q8 || '', a.q8_detail || '',
+      a.q9 || '', a.q10 || ''
+    ].map(escape).join(',');
+  });
+  const csv = [headers.map(escape).join(','), ...rows].join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const date = new Date().toISOString().slice(0,10);
+  a.href = url; a.download = `body-mapping-responses-${date}.csv`;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+document.getElementById('btn-export-csv').addEventListener('click', exportCSV);
 
 // ── File loading ───────────────────────────────────────────────
 const dropZone = document.getElementById('upload-zone');
