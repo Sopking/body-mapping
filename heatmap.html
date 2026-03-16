@@ -123,6 +123,9 @@
     <input type="range" id="range-radius" min="20" max="80" value="40" style="width:100px;">
     <label style="margin-left:12px;">Opacity:</label>
     <input type="range" id="range-opacity" min="20" max="100" value="70" style="width:80px;">
+    <label style="margin-left:12px;" title="What % of respondents clustering in one spot reaches maximum red. Raise this for large datasets.">Threshold:</label>
+    <input type="range" id="range-threshold" min="1" max="30" value="5" style="width:80px;">
+    <span id="threshold-label" style="font-size:12px;color:#666;min-width:32px;">5%</span>
     <div class="spacer"></div>
     <button class="btn-secondary" id="btn-print">Print / Export</button>
     <button class="btn-render" id="btn-render">Update heatmap</button>
@@ -277,8 +280,11 @@ window.removeResponse = i => { responses.splice(i, 1); renderChips(); renderAll(
 // ── Controls ───────────────────────────────────────────────────
 document.getElementById('btn-render').addEventListener('click', renderAll);
 document.getElementById('btn-print').addEventListener('click', () => window.print());
-['sel-type','range-radius','range-opacity'].forEach(id => {
+['sel-type','range-radius','range-opacity','range-threshold'].forEach(id => {
   document.getElementById(id).addEventListener('input', renderAll);
+});
+document.getElementById('range-threshold').addEventListener('input', e => {
+  document.getElementById('threshold-label').textContent = e.target.value + '%';
 });
 
 // ── Master render ──────────────────────────────────────────────
@@ -449,15 +455,15 @@ function drawHeatmap(zone, markers, radius, masterOpacity, totalAll) {
     }
   });
 
-  // Find max for normalisation
-  let maxVal = 0;
-  for (let i = 0; i < buf.length; i++) if (buf[i] > maxVal) maxVal = buf[i];
-  if (maxVal === 0) return;
+  // Normalise against a threshold: (threshold% of total markers) need to cluster
+  // in one spot to reach maximum red. Keeps the scale meaningful at large counts.
+  const thresholdPct = parseInt(document.getElementById('range-threshold').value) / 100;
+  const capVal = Math.max(2, thresholdPct * markers.length);
 
   // Colorise: 0→transparent, low→blue-purple, mid→yellow, high→red
   const imgData = ctx.createImageData(W, H);
   for (let i = 0; i < buf.length; i++) {
-    const t = buf[i] / maxVal; // 0–1
+    const t = Math.min(1, buf[i] / capVal); // 0–1, capped
     if (t < 0.005) continue;
     const [r,g,b] = heatColor(t);
     const a = Math.round(t * 220 * masterOpacity);
