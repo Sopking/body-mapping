@@ -24,7 +24,9 @@
 
   /* Palette */
   .legend { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 20px; }
-  .legend-label { font-size: 13px; font-weight: 600; color: var(--mid); margin-right: 4px; }
+  .legend-label { font-size: 13px; font-weight: 600; color: var(--mid); margin-right: 4px; width: 100%; }
+  .legend-hint { font-size: 12px; font-weight: 400; color: var(--mid); opacity: 0.8; }
+  @media (min-width: 520px) { .legend-label { width: auto; } .legend-hint { display: none; } }
   .dot-btn { display: flex; align-items: center; gap: 9px; padding: 8px 14px; border-radius: 30px; border: 2px solid transparent; cursor: grab; font-size: 13px; font-weight: 600; user-select: none; transition: transform 0.1s, box-shadow 0.1s, border-color 0.15s; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
   .dot-btn:active { transform: scale(0.93); }
   .dot-btn.red  { border-color: var(--red);  color: var(--red);  }
@@ -142,7 +144,7 @@
   </div>
 
   <div class="legend">
-    <span class="legend-label">Select &amp; place on body:</span>
+    <span class="legend-label">Select &amp; place on body. <span class="legend-hint">On a phone, click the red or blue box and then click the body image in the place you choose. A second click in the same place removes the dot.</span></span>
     <div class="dot-btn red active" id="btn-red" data-color="red">
       <div class="swatch"></div><span>Ongoing / repetitive pain</span>
     </div>
